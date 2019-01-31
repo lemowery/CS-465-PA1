@@ -50,22 +50,23 @@ public class DESEncryptor {
 		String[] inputBlocks = null;
 		byte[] strBytes = null;
 		
-		strBytes = input.getBytes("ISO-8859-1");
-		System.out.println(Integer.toBinaryString(strBytes[0]));
+		strBytes = input.getBytes();
 		paddedString = inputPad(strBytes);
-		System.out.println(paddedString.length());
 		inputBlocks = inputDivide(paddedString);
-	
-
+		System.out.println(inputBlocks[0]);
+		System.out.println(inputBlocks[1]);
+		inputBlocks = initialPermutaion(inputBlocks);
+		System.out.println(inputBlocks[0]);
+		System.out.println(inputBlocks[1]);
 		return null;		
 	}
 	
 	public static String[] inputDivide(String input) {
+		// Divides input string into 64-bit  blocks
 		
 		String[] inputBlocks = new String[(int) Math.ceil(input.length() / (double) 64)];
-		System.out.println(input);
 		int j = 0;
-		for(int i = 0; i < inputBlocks.length; i++) {
+		for(int i = 0; i < inputBlocks.length - 1; i++) {
 			inputBlocks[i] = input.substring(j, j + 64);
 			j += 64;
 		}
@@ -76,9 +77,10 @@ public class DESEncryptor {
 	
 	public static String inputPad(byte[] input) {
 		// Pads 00s onto byte array
+		
 		String outputString = toBinString(input);
 		for(int i = 0; i < 8 - (input.length % 8); ++i) {
-			outputString = outputString+ "00000000";
+			outputString = outputString + "00000000";
 		}
 		return outputString;
 	}
@@ -86,14 +88,37 @@ public class DESEncryptor {
 	public static String toBinString(byte[] input) {
 		String output = "";
 		for(int i = 0; i < input.length; ++i) {
-			output = output + Integer.toBinaryString(input[i]);
+			output = output + "0" + Integer.toBinaryString(input[i]);
 		}
 		return output;
 	}
 	
-	public static String initialPermutaion(String input) {
+	public static String[] initialPermutaion(String[] input) {
+		// Permutes each block
+		String[] outStrings = input;
+		for(int i = 0; i < input.length; ++i) {
+			outStrings[i] = permute(input[i]);
+		}
+		return outStrings;
+	}
+	
+	public static String permute(String input) {
+		// Permutes each character according to IP
+		int[] permLocations = 
+			{58, 50, 42, 34, 26, 18, 10, 2
+			, 60, 52, 44, 36, 28, 20, 12, 4
+			, 62, 54, 46, 38, 30, 22, 14, 6
+			, 64, 56, 48, 40, 32, 24, 26, 8
+			, 57, 49, 41, 33, 25, 17, 9, 1
+			, 59, 51, 43, 35, 27, 19, 11, 3
+			, 61, 53, 45, 37, 29, 21, 13, 5
+			, 63, 55, 47, 39, 31, 23, 15, 7};
 		
-		return null;
+		String outputString = "";
+		for (int i = 0; i < input.length(); ++i) {
+			outputString = outputString + input.charAt(permLocations[i] - 1);
+		}
+		return outputString;
 	}
 	
 	// Need decryption method
