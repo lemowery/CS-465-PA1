@@ -13,7 +13,9 @@ public class DESEncryptor {
 		System.out.println("Please enter an 8-character key >> ");
 		Scanner input = new Scanner(System.in);
 		String key = input.next();
-		encrypt(fileContents);
+		key = preProcessKey(key);
+		String[] processedData = preProcessData(fileContents);
+		encrypt(processedData, key);
 		// Export to output file
 		
 	}
@@ -44,21 +46,33 @@ public class DESEncryptor {
 	
 	// File write method
 	
-	// Need encryption method
-	public static String encrypt(String input) throws UnsupportedEncodingException {
+	public static String preProcessKey(String input) {
+		byte[] strBytes = input.getBytes();
+		String output = toBinString(strBytes);
+		return output;
+	}
+	
+	public static String[] preProcessData(String input) {
 		String outputString, paddedString = "";
 		String[] inputBlocks = null;
-		byte[] strBytes = null;
-		
+		byte[] strBytes = null;	
 		strBytes = input.getBytes();
 		paddedString = inputPad(strBytes);
 		inputBlocks = inputDivide(paddedString);
-		System.out.println(inputBlocks[0]);
-		System.out.println(inputBlocks[1]);
 		inputBlocks = initialPermutaion(inputBlocks);
-		System.out.println(inputBlocks[0]);
-		System.out.println(inputBlocks[1]);
-		return null;		
+		return inputBlocks;
+	}
+	
+	// Need encryption method
+	public static String encrypt(String[] input, String key) throws UnsupportedEncodingException {
+		// 	Expand
+		// XOR w key
+		// S sub
+		// P sub
+		// XOR w Li
+		String[] keys = keyGen(key);
+		
+		return null;	
 	}
 	
 	public static String[] inputDivide(String input) {
@@ -97,12 +111,40 @@ public class DESEncryptor {
 		// Permutes each block
 		String[] outStrings = input;
 		for(int i = 0; i < input.length; ++i) {
-			outStrings[i] = permute(input[i]);
+			outStrings[i] = initPermute(input[i]);
 		}
 		return outStrings;
 	}
 	
-	public static String permute(String input) {
+	public static String[] keyGen(String input) {
+		String[] outputStrings = null;
+		String compressedKey = parityDrop(input);
+		System.out.println(compressedKey);
+		return null;
+	}
+	
+	public static String parityDrop(String input) {
+		/*
+		 * Parity Drop
+		 */
+		int[] parityTable = 
+					 {57, 49, 41, 33, 25, 17, 9, 1
+					, 58, 50, 42, 34, 26, 18, 10, 02
+					, 59, 51, 43, 35, 27, 19, 11, 03
+					, 60, 52, 44, 36, 63, 55, 47, 39
+					, 31, 23, 25, 07, 62, 54, 46, 38
+					, 30, 22, 14, 06, 61, 53, 45, 37
+					, 29, 21, 13, 05, 28, 20, 12, 04};
+		
+		String compressedKey = "";		
+
+		for(int i = 0; i < parityTable.length; ++i) {
+			compressedKey = compressedKey + input.charAt(parityTable[i] - 1);
+		}
+		return compressedKey;
+	}
+	
+	public static String initPermute(String input) {
 		// Permutes each character according to IP
 		int[] permLocations = 
 			{58, 50, 42, 34, 26, 18, 10, 2
@@ -120,6 +162,9 @@ public class DESEncryptor {
 		}
 		return outputString;
 	}
+	
+	
+	
 	
 	// Need decryption method
 }
