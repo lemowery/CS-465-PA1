@@ -47,12 +47,23 @@ public class DESEncryptor {
 	// File write method
 	
 	public static String preProcessKey(String input) {
+		/*
+		 * Converts string key data given by user
+		 * Returns binary string representation of key
+		 */
 		byte[] strBytes = input.getBytes();
 		String output = toBinString(strBytes);
 		return output;
 	}
 	
 	public static String[] preProcessData(String input) {
+		/*
+		 * Converts string data from file
+		 * Pads to complete blocks
+		 * Divides data into 64-bit chunks
+		 * Applies initial permutation
+		 * Returns string array of 64-bit blocks
+		 */
 		String outputString, paddedString = "";
 		String[] inputBlocks = null;
 		byte[] strBytes = null;	
@@ -71,12 +82,21 @@ public class DESEncryptor {
 		// P sub
 		// XOR w Li
 		String[] keys = keyGen(key);
-		
+		for(int i = 0; i < input.length; ++i) {
+			for(int j = 0; j <  16; ++j) {
+				String leftString = input[i].substring((input[i].length() + 1) / 2);
+				String rightString = input[i].substring(input[i].length() + 1);
+				rightString = dboxExpansion(rightString);
+				
+			}
+		}
 		return null;	
 	}
 	
 	public static String[] inputDivide(String input) {
-		// Divides input string into 64-bit  blocks
+		/*
+		 *  Divides input string into 64-bit  blocks
+		 */
 		
 		String[] inputBlocks = new String[(int) Math.ceil(input.length() / (double) 64)];
 		int j = 0;
@@ -90,7 +110,9 @@ public class DESEncryptor {
 	}
 	
 	public static String inputPad(byte[] input) {
-		// Pads 00s onto byte array
+		/*
+		 *  Pads 00s onto byte array to complete 64-bit blocks
+		 */
 		
 		String outputString = toBinString(input);
 		for(int i = 0; i < 8 - (input.length % 8); ++i) {
@@ -100,6 +122,10 @@ public class DESEncryptor {
 	}
 	
 	public static String toBinString(byte[] input) {
+		/*
+		 * Turns byte array into binary string representation
+		 * Converts from 7-bit to 8-bit
+		 */
 		String output = "";
 		for(int i = 0; i < input.length; ++i) {
 			output = output + "0" + Integer.toBinaryString(input[i]);
@@ -108,7 +134,10 @@ public class DESEncryptor {
 	}
 	
 	public static String[] initialPermutaion(String[] input) {
-		// Permutes each block
+		/*
+		 * Applies initial permutation on each string block
+		 * in string array
+		 */
 		String[] outStrings = input;
 		for(int i = 0; i < input.length; ++i) {
 			outStrings[i] = initPermute(input[i]);
@@ -117,15 +146,61 @@ public class DESEncryptor {
 	}
 	
 	public static String[] keyGen(String input) {
+		/*
+		 * Generates String array of 16, 48-bit keys
+		 * based on given key string
+		 */
+		String[] keys = new String[16];
+		int[] shiftCycles = {1, 1, 2, 2, 2, 2, 2, 2
+						   , 1, 2, 2, 2, 2, 2, 2, 1};
 		String[] outputStrings = null;
-		String compressedKey = parityDrop(input);
-		System.out.println(compressedKey);
-		return null;
+		String parityString = parity(input);
+		String compressedKey = keyCompress(parityString);
+		String leftString = compressedKey.substring(0, (compressedKey.length() + 1) / 2);
+		String rightString = compressedKey.substring((compressedKey.length() + 1) / 2);
+
+		for(int i = 0; i < 16; ++i) {
+			int j = 0;
+			while(j < shiftCycles[i]) {
+				leftString = keyShift(leftString);
+				rightString = keyShift(rightString);
+				++j;
+			}
+			String newString = leftString + rightString;
+			newString = dBoxCompress(newString);
+			keys[i]= newString; 
+		}
+		return keys;
 	}
 	
-	public static String parityDrop(String input) {
+	public static String parity(String input) {
 		/*
-		 * Parity Drop
+		 * Does odd parity correction on binary string input
+		 * returns string with parity correction
+		 */
+		String outputString = "";
+		for (int i = 0; i < input.length() / 8; ++i) {
+			int parityCount = 0;
+			for(int j = 1; j < 8; ++j) {
+				outputString = outputString + input.charAt((i * 8) + j);
+				if(input.charAt((i * 8) + j) == '1') {
+					++parityCount;
+				}
+			}
+			if((parityCount % 2) == 0) {
+				outputString = outputString + '1';
+			}
+			else {
+				outputString = outputString + '0';
+			}
+		}
+		return outputString;
+	}
+	
+	public static String keyCompress(String input) {
+		/*
+		 * Compresses 64-bit key to 56-bit key using parity-bit drop table
+		 * Returns 56-bit binary string
 		 */
 		int[] parityTable = 
 					 {57, 49, 41, 33, 25, 17, 9, 1
@@ -145,7 +220,10 @@ public class DESEncryptor {
 	}
 	
 	public static String initPermute(String input) {
-		// Permutes each character according to IP
+		/*
+		 *  Permutes each character in binary string according to IP
+		 *  Returns new string with appropriate permutation
+		 */
 		int[] permLocations = 
 			{58, 50, 42, 34, 26, 18, 10, 2
 			, 60, 52, 44, 36, 28, 20, 12, 4
@@ -163,7 +241,72 @@ public class DESEncryptor {
 		return outputString;
 	}
 	
+	public static String keyShift(String input) {
+		/*
+		 * Shifts string left one bit
+		 * Returns shifted binary string
+		 */
+		String output = input.substring(1);
+		output = output + input.charAt(0);
+		return output;
+	}
 	
+	public static String dBoxCompress(String input) {
+		/*
+		 * Compresses 56-bit input key to 48-bit key
+		 * Returns 48-bit key
+		 */
+		String output = "";
+		int[] keyCompressionTable = 
+			 {14, 17, 11, 24, 01, 05, 03, 28
+			, 15, 06, 21, 10, 23, 19, 12, 04
+			, 26, 8, 16, 07, 27, 20, 13, 02
+			, 41, 52, 31, 37, 47, 55, 30, 40
+			, 51, 45, 33, 48, 44, 49, 39, 56
+			, 34, 53, 46, 42, 50, 36, 29, 32};
+		
+		for (int i = 0; i < keyCompressionTable.length; ++i) {
+			output = output + input.charAt(keyCompressionTable[i] - 1);
+		}
+		return output;
+	}
+	
+	public static String dboxExpansion(String input) {
+		/*
+		 * Expands 32-bit right half to 48-bits
+		 * Returns 48-bit binary string
+		 */
+		String output = "";
+		int[] expansionTable = 
+					 {32, 1, 2, 3, 4, 5
+					, 4, 5, 6, 7, 8, 9
+					, 8, 9, 10, 11, 12, 13
+					, 12, 13, 14, 15, 16, 17
+					, 16, 17, 18, 19, 20, 21
+					, 20, 21, 22, 23, 24, 25
+					, 24, 25, 26, 27, 28, 29
+					, 28, 29, 30, 31, 32, 1};
+		
+		for(int i = 0; i < expansionTable.length; ++i) {
+			output = output + input.charAt(expansionTable[i]- 1);
+		}
+		return output;
+	}
+	
+	public static String XOR(String input1, String input2) {
+		String output = "";
+		
+		for(int i = 0; i < input1.length(); ++i) {
+			if((input1.charAt(i) == '1' && input2.charAt(i) == '1') || (input1.charAt(i) == '0' && input2.charAt(i) == '0')) {
+				output = output + '0';
+			}
+			else {
+				output = output + '1';
+			}
+		}
+		
+		return output;
+	}
 	
 	
 	// Need decryption method
