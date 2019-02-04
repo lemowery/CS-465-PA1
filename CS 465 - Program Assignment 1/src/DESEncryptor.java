@@ -74,48 +74,57 @@ public class DESEncryptor {
 		return inputBlocks;
 	}
 	
-	// Need encryption method
-	public static String[] encrypt(String[] input, String key) throws UnsupportedEncodingException {
-		// 	Expand
-		// XOR w key
-		// S sub
-		// P sub
-		// XOR w Li
+	public static void encrypt(String[] input, String key) throws UnsupportedEncodingException {
+		String[] test = 
+			{
+					"00001001010010110101000110001110"
+					,"00110001010111111110111011101101"
+					,"11010100010000110100011011101100"
+					,"01110001000000110101010010100100"
+					,"11111001000100011010001011101100"
+					,"11101110001100101110100101111001"
+					,"11011100101110111011011110000010"
+					,"10100010100110010010100011011010"
+					,"11111110010011000111111111011110"
+					,"11101101000000011000000001111101"
+					,"00011110000000111010101011011110"
+					,"11010001110010111100101100100001"
+					,"00110101110011100100000110101010"
+					,"10100101100111011001101010010000"
+					,"00110011110101010110110110110001"
+					,"11101010011110010001100010101101"	
+			};
 		String[] output = new String[input.length];
 		String[] keys = keyGen(key);
-		//for(int i = 0; i < input.length; ++i) {
-			String leftString = input[0].substring(0, (input[0].length() + 1) / 2);
-			String rightString = input[0].substring((input[0].length() + 1) / 2);
-			for(int j = 0; j <  15; ++j) {
-				
+		for(int i = 0; i < input.length; ++i) {
+			String leftString = input[i].substring(0, (input[i].length() + 1) / 2);
+			String rightString = input[i].substring((input[i].length() + 1) / 2);
+			for(int j = 0; j <  16; ++j) {
+				String tempString = rightString;
+				//System.out.println(leftString);
+				//System.out.println(rightString);
+		
 				// Function f
 				rightString = eboxExpansion(rightString);
+				//System.out.println(rightString);
 				rightString = XOR(rightString, keys[j]);
+				//System.out.println(rightString);
 				rightString = sBoxSub(rightString);
+				//System.out.println(rightString);
 				rightString = pBoxPerm(rightString);
-				
-				String tempString = rightString;
+				//System.out.println(rightString);
+			
 				leftString = XOR(leftString, rightString);
+				//System.out.println(leftString);
+				//System.out.println(test[j]);
 				rightString = leftString;
 				leftString = tempString;
 			}
-			
-			// Function f for last time
-			rightString = eboxExpansion(rightString);
-			rightString = XOR(rightString, keys[15]);
-			rightString = sBoxSub(rightString);
-			rightString = pBoxPerm(rightString);
-			
-			leftString = XOR(leftString, rightString);
-			
-			String combinedString = rightString + leftString;
-			combinedString = inverseInitPerm(combinedString);
-			System.out.println("0001001110000101101101000001000111000001110101011111001011110110");
-			System.out.println(combinedString);
 
-			
-		//}
-		return null;	
+			String combinedString = rightString + leftString;
+			output[i] = inverseInitPerm(combinedString);
+			System.out.println(output[i]);
+		}	
 	}
 	
 	public static String[] inputDivide(String input) {
@@ -346,7 +355,7 @@ public class DESEncryptor {
 		int[][] sBoxes = 
 			{
 			  {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7
-			  , 0, 15, 7, 4, 14, 2, 13, 10, 3, 6, 12, 11, 9, 5, 3, 8
+			  , 0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8
 			  , 4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0
 			  , 15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13}
 			  
@@ -360,7 +369,7 @@ public class DESEncryptor {
 			  , 13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7
 			  , 1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12}
 			
-			, {7, 13, 4, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15
+			, {7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15
 			  , 13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9
 			  , 10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4
 			  , 3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14}
@@ -373,7 +382,7 @@ public class DESEncryptor {
 			, {12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11
 			  ,10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8
 			  , 9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6
-			  , 4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 10, 0, 8, 13}
+			  , 4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13}
 			
 			, {4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1
 			  , 13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6
@@ -381,9 +390,9 @@ public class DESEncryptor {
 			  , 6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12}
 			
 			, {13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7
-			  , 1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 10, 14, 9, 2
-			  , 7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 10, 15, 3, 5, 8
-			  , 2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 9, 3, 5, 6, 11}
+			  , 1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2
+			  , 7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8
+			  , 2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11}
 			
 			};
 		
@@ -444,5 +453,6 @@ public class DESEncryptor {
 		
 		return output;
 	}
+	
 	// Need decryption method
 }
