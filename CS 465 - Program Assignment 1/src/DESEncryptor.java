@@ -1,3 +1,15 @@
+/*
+ * Levi Mowery
+ * Login ID: lemowery
+ * Student ID: 800096308
+ * Programming Assignment 1
+ * Date: 02/05/2019
+ * 
+ * 
+ * STATUS SHEET:
+ * Both encrypt and decrypt functions are working properly, 
+ * as well as their information being written to the appropriate file
+ */
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -96,11 +108,14 @@ public class DESEncryptor {
 			writer.append(String.format("Key %d is %s", i, keys[i]));
 			writer.newLine();
 		}
+		
 		writer.newLine();
 		
 		for(int i = 0; i < input.length; ++i) {
 			writer.append(String.format("Block number: %d", i + 1));
 			writer.newLine();
+			writer.newLine();
+			
 			String leftString = input[i].substring(0, (input[i].length() + 1) / 2);
 			String rightString = input[i].substring((input[i].length() + 1) / 2);
 			for(int j = 0; j <  16; ++j) {
@@ -128,7 +143,7 @@ public class DESEncryptor {
 				writer.newLine();
 				
 				leftString = XOR(leftString, rightString);
-				writer.append(String.format("XOR with L_i-%d (This is R_i): %s", j + 1, rightString));
+				writer.append(String.format("XOR with L_i-%d (This is R_i): %s", j + 1, leftString));
 				writer.newLine();
 				writer.newLine();
 				rightString = leftString;
@@ -140,8 +155,46 @@ public class DESEncryptor {
 			writer.append(String.format("Final Permutation: %s", output[i]));
 			writer.newLine();
 			writer.newLine();
-		}	
+		}
+		
+		writer.append(String.format("Decrypted string: %s", decrypt(output, keys)));
+		writer.newLine();
 		writer.close();
+	}
+	
+	public static String decrypt(String[] input, String[] keys) {
+		/*
+		 * Decrypts input String[] of 64-bit blocks based on DES with user given key
+		 * Returns decrypted binary string
+		 * 
+		 */
+		input = initialPermutaion(input);
+		String output = "";
+		
+		for(int i = 0; i < input.length; ++i) {
+			
+			String leftString = input[i].substring(0, (input[i].length() + 1) / 2);
+			String rightString = input[i].substring((input[i].length() + 1) / 2);
+			for(int j = 15; j >= 0; --j) {
+				String tempString = rightString;
+		
+				// Function f
+				rightString = eboxExpansion(rightString);
+				rightString = XOR(rightString, keys[j]);
+				System.out.println(keys[j]);
+				rightString = sBoxSub(rightString);
+				rightString = pBoxPerm(rightString);
+
+				leftString = XOR(leftString, rightString);
+				rightString = leftString;
+				leftString = tempString;
+			}
+
+			String combinedString = rightString + leftString;
+			combinedString = inverseInitPerm(combinedString);
+			output = output + combinedString;
+		}	
+		return output;
 	}
 	
 	public static String[] inputDivide(String input) {
