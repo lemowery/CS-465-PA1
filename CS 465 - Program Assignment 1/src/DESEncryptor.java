@@ -1,10 +1,14 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.spec.KeySpec;
 import java.util.Scanner;
 
 public class DESEncryptor {
-	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
+	public static void main(String[] args) throws IOException {
 		
 		// Read input file
 		String fileContents = readFile("plaintext.txt");
@@ -12,12 +16,10 @@ public class DESEncryptor {
 		
 		System.out.println("Please enter an 8-character key >> ");
 		Scanner input = new Scanner(System.in);
-		String key = input.next();
-		key = preProcessKey(key);
+		String keyString = input.next();
+		String key = preProcessKey(keyString);
 		String[] processedData = preProcessData(fileContents);
-		encrypt(processedData, key);
-		// Export to output file
-		
+		encrypt(fileContents, processedData, key, keyString);		
 	}
 	
 	public static String inputTrim(String input) {
@@ -74,57 +76,72 @@ public class DESEncryptor {
 		return inputBlocks;
 	}
 	
-	public static void encrypt(String[] input, String key) throws UnsupportedEncodingException {
-		String[] test = 
-			{
-					"00001001010010110101000110001110"
-					,"00110001010111111110111011101101"
-					,"11010100010000110100011011101100"
-					,"01110001000000110101010010100100"
-					,"11111001000100011010001011101100"
-					,"11101110001100101110100101111001"
-					,"11011100101110111011011110000010"
-					,"10100010100110010010100011011010"
-					,"11111110010011000111111111011110"
-					,"11101101000000011000000001111101"
-					,"00011110000000111010101011011110"
-					,"11010001110010111100101100100001"
-					,"00110101110011100100000110101010"
-					,"10100101100111011001101010010000"
-					,"00110011110101010110110110110001"
-					,"11101010011110010001100010101101"	
-			};
+	public static void encrypt(String fileContents, String[] input, String key, String keyString) throws IOException {
+		/*
+		 * Encrypts input String[] of 64-bit blocks based on DES with user given key
+		 * Writes iterative results to a file
+		 * 
+		 */
+		BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt", false));
 		String[] output = new String[input.length];
 		String[] keys = keyGen(key);
+		
+		// Write first data, password, and keys to file
+		writer.append(String.format("Text to encrypt: %s", fileContents));
+		writer.newLine();
+		writer.append(String.format("Password: %s", keyString));
+		writer.newLine();
+		writer.newLine();
+		for(int i = 0; i < keys.length; ++i) {
+			writer.append(String.format("Key %d is %s", i, keys[i]));
+			writer.newLine();
+		}
+		writer.newLine();
+		
 		for(int i = 0; i < input.length; ++i) {
+			writer.append(String.format("Block number: %d", i + 1));
+			writer.newLine();
 			String leftString = input[i].substring(0, (input[i].length() + 1) / 2);
 			String rightString = input[i].substring((input[i].length() + 1) / 2);
 			for(int j = 0; j <  16; ++j) {
 				String tempString = rightString;
-				//System.out.println(leftString);
-				//System.out.println(rightString);
 		
+				writer.append(String.format("Iteration: %d", j + 1));
+				writer.newLine();
+				writer.append(String.format("L_i-%d: %s", j + 1, leftString));
+				writer.newLine();
+				writer.append(String.format("R_i-%d: %s", j + 1, rightString));
+				writer.newLine();
+				
 				// Function f
 				rightString = eboxExpansion(rightString);
-				//System.out.println(rightString);
+				writer.append(String.format("Expansion Permutation: %s", rightString));
+				writer.newLine();
 				rightString = XOR(rightString, keys[j]);
-				//System.out.println(rightString);
+				writer.append(String.format("XOR with key: %s", rightString));
+				writer.newLine();
 				rightString = sBoxSub(rightString);
-				//System.out.println(rightString);
+				writer.append(String.format("S-box substitution: %s", rightString));
+				writer.newLine();
 				rightString = pBoxPerm(rightString);
-				//System.out.println(rightString);
-			
+				writer.append(String.format("P-box permutation: %s", rightString));
+				writer.newLine();
+				
 				leftString = XOR(leftString, rightString);
-				//System.out.println(leftString);
-				//System.out.println(test[j]);
+				writer.append(String.format("XOR with L_i-%d (This is R_i): %s", j + 1, rightString));
+				writer.newLine();
+				writer.newLine();
 				rightString = leftString;
 				leftString = tempString;
 			}
 
 			String combinedString = rightString + leftString;
 			output[i] = inverseInitPerm(combinedString);
-			System.out.println(output[i]);
+			writer.append(String.format("Final Permutation: %s", output[i]));
+			writer.newLine();
+			writer.newLine();
 		}	
+		writer.close();
 	}
 	
 	public static String[] inputDivide(String input) {
