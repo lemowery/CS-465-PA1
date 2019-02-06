@@ -15,11 +15,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutput;
 import java.io.UnsupportedEncodingException;
 import java.security.spec.KeySpec;
 import java.util.Scanner;
 
 public class DESEncryptor {
+	
 	public static void main(String[] args) throws IOException {
 		
 		// Read input file
@@ -96,6 +98,8 @@ public class DESEncryptor {
 		 */
 		BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt", false));
 		String[] output = new String[input.length];
+		String outputString = "";
+		String inputString = "";
 		String[] keys = keyGen(key);
 		
 		// Write first data, password, and keys to file
@@ -152,12 +156,17 @@ public class DESEncryptor {
 
 			String combinedString = rightString + leftString;
 			output[i] = inverseInitPerm(combinedString);
+			outputString = outputString + output[i];
+			inputString = inputString + input[i];
 			writer.append(String.format("Final Permutation: %s", output[i]));
 			writer.newLine();
 			writer.newLine();
 		}
+		writer.append(String.format("Final Encrypted binary string: %s", outputString));
+		writer.newLine();
+		writer.newLine();
 		
-		writer.append(String.format("Decrypted string: %s", decrypt(output, keys)));
+		writer.append(String.format("Final Decrypted binary string: %s", decrypt(output, keys)));
 		writer.newLine();
 		writer.close();
 	}
@@ -168,33 +177,50 @@ public class DESEncryptor {
 		 * Returns decrypted binary string
 		 * 
 		 */
+		
 		input = initialPermutaion(input);
 		String output = "";
 		
 		for(int i = 0; i < input.length; ++i) {
 			
-			String leftString = input[i].substring(0, (input[i].length() + 1) / 2);
-			String rightString = input[i].substring((input[i].length() + 1) / 2);
+			String rightString = input[i].substring(0, (input[i].length() + 1) / 2);
+			String leftString = input[i].substring((input[i].length() + 1) / 2);
+			
+			
 			for(int j = 15; j >= 0; --j) {
-				String tempString = rightString;
-		
+				String tempString = leftString;				
+				
 				// Function f
-				rightString = eboxExpansion(rightString);
-				rightString = XOR(rightString, keys[j]);
-				System.out.println(keys[j]);
-				rightString = sBoxSub(rightString);
-				rightString = pBoxPerm(rightString);
+				leftString = eboxExpansion(leftString);
+				leftString = XOR(leftString, keys[j]);
+				leftString = sBoxSub(leftString);
+				leftString = pBoxPerm(leftString);
 
-				leftString = XOR(leftString, rightString);
-				rightString = leftString;
-				leftString = tempString;
+				rightString = XOR(leftString, rightString);
+				leftString = rightString;
+				rightString = tempString;
 			}
+			
 
-			String combinedString = rightString + leftString;
+
+			String combinedString = leftString + rightString;
 			combinedString = inverseInitPerm(combinedString);
+			combinedString = decryptTrim(combinedString);
 			output = output + combinedString;
 		}	
 		return output;
+	}
+	
+	public static String decryptTrim(String input) {
+		/*
+		 * Does 8-bit to 7-bit conversion
+		 * returns converted string
+		 */
+		String outString = "";
+		for(int i = 0; i < input.length() / 8; ++i) {
+			outString = outString + input.substring((i * 8) + 1, (i * 8) + 8);
+		}
+		return outString;
 	}
 	
 	public static String[] inputDivide(String input) {
@@ -332,7 +358,7 @@ public class DESEncryptor {
 			{58, 50, 42, 34, 26, 18, 10, 2
 			, 60, 52, 44, 36, 28, 20, 12, 4
 			, 62, 54, 46, 38, 30, 22, 14, 6
-			, 64, 56, 48, 40, 32, 24, 26, 8
+			, 64, 56, 48, 40, 32, 24, 16, 8
 			, 57, 49, 41, 33, 25, 17, 9, 1
 			, 59, 51, 43, 35, 27, 19, 11, 3
 			, 61, 53, 45, 37, 29, 21, 13, 5
